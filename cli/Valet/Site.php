@@ -93,7 +93,7 @@ class Site
      */
     function resecureForNewDomain($oldDomain, $domain)
     {
-        if (!$this->files->exists($this->certificatesPath())) {
+        if (! $this->files->exists($this->certificatesPath())) {
             return;
         }
 
@@ -233,29 +233,6 @@ class Site
 
             $this->cli->run(sprintf('sudo security delete-certificate -c "%s" -t', $url));
         }
-    }
-
-    /**
-     * Get all of the log files for all sites.
-     *
-     * @param  array  $paths
-     * @return array
-     */
-    function logs($paths)
-    {
-        $files = collect();
-
-        foreach ($paths as $path) {
-            $files = $files->merge(collect($this->files->scandir($path))->map(function ($directory) use ($path) {
-                $logPath = $path.'/'.$directory.'/storage/logs/laravel.log';
-
-                if ($this->files->isDir(dirname($logPath))) {
-                    return $this->files->touchAsUser($logPath);
-                }
-            })->filter());
-        }
-
-        return $files->values()->all();
     }
 
     /**

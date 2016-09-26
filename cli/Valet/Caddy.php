@@ -64,7 +64,7 @@ class Caddy
             $this->files->mkdirAsUser($caddyDirectory);
         }
 
-        $this->files->touchAsUser($caddyDirectory.'/.keep');
+        $this->files->putAsUser($caddyDirectory.'/.keep', "\n");
 
         $this->rewriteSecureCaddyFiles();
     }
@@ -79,6 +79,7 @@ class Caddy
     function rewriteSecureCaddyFiles()
     {
         $domain = $this->configuration->read()['domain'];
+
         $this->site->resecureForNewDomain($domain, $domain);
     }
 
