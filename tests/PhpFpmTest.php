@@ -22,14 +22,16 @@ class PhpFpmTest extends PHPUnit_Framework_TestCase
         Mockery::close();
     }
 
-    public function test_fpm_is_configured_with_the_correct_user_group_and_socket()
+    public function test_fpm_is_configured_with_the_correct_user_group_and_port()
     {
         copy(__DIR__.'/files/fpm.conf', __DIR__.'/output/fpm.conf');
+        mkdir(__DIR__.'/output/conf.d');
+        copy(__DIR__.'/files/php-memory-limits.ini', __DIR__.'/output/conf.d/php-memory-limits.ini');
         resolve(StubForUpdatingFpmConfigFiles::class)->updateConfiguration();
         $contents = file_get_contents(__DIR__.'/output/fpm.conf');
-        $this->assertTrue(strpos($contents, sprintf("\nuser = %s", user())) !== false);
-        $this->assertTrue(strpos($contents, "\ngroup = staff") !== false);
-        $this->assertTrue(strpos($contents, "\nlisten = /var/run/valet/fpm.socket") !== false);
+        $this->assertContains(sprintf("\nuser = %s", user()), $contents);
+        $this->assertContains("\ngroup = staff", $contents);
+        $this->assertContains("\nlisten = ".VALET_HOME_PATH."/valet.sock", $contents);
     }
 }
 
