@@ -20,11 +20,11 @@ function show_valet_404()
 /**
  * @param $domain string Domain to filter
  *
- * @return string Filtered domain (without xip.io feature)
+ * @return string Filtered domain (without wildcard dns feature (xip.io/nip.io))
  */
-function valet_support_xip_io($domain)
+function valet_support_wildcard_dns($domain)
 {
-    if (substr($domain, -7) === '.xip.io') {
+    if (in_array(substr($domain, -7), ['.xip.io', '.nip.io'])) {
         // support only ip v4 for now
         $domainPart = explode('.', $domain);
         if (count($domainPart) > 6) {
@@ -33,6 +33,20 @@ function valet_support_xip_io($domain)
     }
 
     return $domain;
+}
+
+/**
+ * @param array $config Valet configuration array
+ *
+ * @return string|null If set, default site path for uncaught urls
+ * */
+function valet_default_site_path($config)
+{
+    if (isset($config['default']) && is_string($config['default']) && is_dir($config['default'])) {
+        return $config['default'];
+    }
+
+    return null;
 }
 
 /**
@@ -50,8 +64,8 @@ $uri = urldecode(
 );
 
 $siteName = basename(
-    // Filter host to support xip.io feature
-    valet_support_xip_io($_SERVER['HTTP_HOST']),
+    // Filter host to support wildcard dns feature
+    valet_support_wildcard_dns($_SERVER['HTTP_HOST']),
     '.'.$valetConfig['domain']
 );
 
@@ -77,7 +91,7 @@ foreach ($valetConfig['paths'] as $path) {
     }
 }
 
-if (is_null($valetSitePath)) {
+if (is_null($valetSitePath) && is_null($valetSitePath = valet_default_site_path($valetConfig))) {
     show_valet_404();
 }
 

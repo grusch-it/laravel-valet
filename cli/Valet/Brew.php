@@ -40,9 +40,19 @@ class Brew
      */
     function hasInstalledPhp()
     {
-        return $this->installed('php71')
-            || $this->installed('php70')
-            || $this->installed('php56');
+        return $this->supportedPhpVersions()->contains(function ($version) {
+            return $this->installed($version);
+        });
+    }
+
+    /**
+     * Get a list of supported PHP versions
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    function supportedPhpVersions()
+    {
+        return collect(['php72', 'php71', 'php70', 'php56']);
     }
 
     /**
@@ -171,15 +181,11 @@ class Brew
 
         $resolvedPath = $this->files->readLink('/usr/local/bin/php');
 
-        if (strpos($resolvedPath, 'php71') !== false) {
-            return 'php71';
-        } elseif (strpos($resolvedPath, 'php70') !== false) {
-            return 'php70';
-        } elseif (strpos($resolvedPath, 'php56') !== false) {
-            return 'php56';
-        } else {
+        return $this->supportedPhpVersions()->first(function ($version) use ($resolvedPath) {
+            return strpos($resolvedPath, $version) !== false;
+        }, function () {
             throw new DomainException("Unable to determine linked PHP.");
-        }
+        });
     }
 
     /**
@@ -190,5 +196,18 @@ class Brew
     function restartLinkedPhp()
     {
         $this->restartService($this->linkedPhp());
+    }
+
+    /**
+     * Create the "sudoers.d" entry for running Brew.
+     *
+     * @return void
+     */
+    function createSudoersEntry()
+    {
+        $this->files->ensureDirExists('/etc/sudoers.d');
+
+        $this->files->put('/etc/sudoers.d/brew', 'Cmnd_Alias BREW = /usr/local/bin/brew *
+%admin ALL=(root) NOPASSWD: BREW'.PHP_EOL);
     }
 }

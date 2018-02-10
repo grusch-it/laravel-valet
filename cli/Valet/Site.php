@@ -64,7 +64,8 @@ class Site
      *
      * @return \Illuminate\Support\Collection
      */
-    function links() {
+    function links()
+    {
         $certsPath = VALET_HOME_PATH.'/Certificates';
 
         $this->files->ensureDirExists($certsPath, user());
@@ -82,10 +83,10 @@ class Site
      */
     function getCertificates($path)
     {
-        return collect($this->files->scanDir($path))->filter(function ($value, $key) {
+        return collect($this->files->scandir($path))->filter(function ($value, $key) {
             return ends_with($value, '.crt');
         })->map(function ($cert) {
-            return substr($cert, 0, -8);
+            return substr($cert, 0, strripos($cert, '.', -5));
         })->flip();
     }
 
@@ -100,7 +101,7 @@ class Site
     {
         $config = $this->config->read();
 
-        return collect($this->files->scanDir($path))->mapWithKeys(function ($site) use ($path) {
+        return collect($this->files->scandir($path))->mapWithKeys(function ($site) use ($path) {
             return [$site => $this->files->readLink($path.'/'.$site)];
         })->map(function ($path, $site) use ($certs, $config) {
             $secured = $certs->has($site);
@@ -209,7 +210,7 @@ class Site
         $this->createSigningRequest($url, $keyPath, $csrPath, $confPath);
 
         $this->cli->runAsUser(sprintf(
-            'openssl x509 -req -days 365 -in %s -signkey %s -out %s -extensions v3_req -extfile %s',
+            'openssl x509 -req -sha256 -days 365 -in %s -signkey %s -out %s -extensions v3_req -extfile %s',
             $csrPath, $keyPath, $crtPath, $confPath
         ));
 

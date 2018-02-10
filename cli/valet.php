@@ -18,7 +18,7 @@ use Illuminate\Container\Container;
  */
 Container::setInstance(new Container);
 
-$version = '2.0.4';
+$version = '2.0.7';
 
 $app = new Application('Laravel Valet', $version);
 
@@ -40,7 +40,7 @@ $app->command('install', function () {
     Configuration::install();
     Nginx::install();
     PhpFpm::install();
-    DnsMasq::install();
+    DnsMasq::install(Configuration::read()['domain']);
     Nginx::restart();
     Valet::symlinkToUsersBin();
 
@@ -184,8 +184,7 @@ if (is_dir(VALET_HOME_PATH)) {
      */
     $app->command('open [domain]', function ($domain = null) {
         $url = "http://".($domain ?: Site::host(getcwd())).'.'.Configuration::read()['domain'];
-
-        passthru("open ".escapeshellarg($url));
+        CommandLine::runAsUser("open ".escapeshellarg($url));
     })->descriptions('Open the site for the current (or specified) directory in your browser');
 
     /**
@@ -254,6 +253,16 @@ if (is_dir(VALET_HOME_PATH)) {
             output('NO');
         }
     })->descriptions('Determine if this is the latest version of Valet');
+
+    /**
+     * Install the sudoers.d entries so password is no longer required.
+     */
+    $app->command('trust', function () {
+        Brew::createSudoersEntry();
+        Valet::createSudoersEntry();
+
+        info('Sudoers entries have been added for Brew and Valet.');
+    })->descriptions('Add sudoers files for Brew and Valet to make Valet commands run without passwords');
 }
 
 /**

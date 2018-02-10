@@ -23,6 +23,14 @@ class CraftValetDriver extends ValetDriver
      */
     public function frontControllerDirectory($sitePath)
     {
+        $dirs = ['web', 'public'];
+
+        foreach ($dirs as $dir) {
+            if (is_dir($sitePath.'/'.$dir)) {
+                return $dir;
+            }
+        }
+        // Give up, and just return the default
         return is_file($sitePath.'/craft') ? 'web' : 'public';
     }
 
@@ -183,14 +191,15 @@ class CraftValetDriver extends ValetDriver
         $parts = explode('/', $uri);
 
         if (count($parts) > 1 && in_array($parts[1], $locales)) {
-            $indexPath = $sitePath.'/public/'. $parts[1] .'/index.php';
-            $scriptName = '/' . $parts[1] . '/index.php';
+            $indexPath = $sitePath.'/'.$frontControllerDirectory.'/'.$parts[1].'/index.php';
+            $scriptName = '/'.$parts[1].'/index.php';
         }
 
         $_SERVER['SCRIPT_FILENAME'] = $indexPath;
         $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];
         $_SERVER['SCRIPT_NAME'] = $scriptName;
         $_SERVER['PHP_SELF'] = $scriptName;
+        $_SERVER['DOCUMENT_ROOT'] = $sitePath.'/'.$frontControllerDirectory;
 
         return $indexPath;
     }
